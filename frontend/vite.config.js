@@ -5,8 +5,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  // Reemplaza 'Proyecto' por el nombre exacto de tu repositorio en GitHub
-  base: '/Proyecto/', 
+  // Al poner './' obligamos a Vite a buscar los archivos de manera relativa
+  base: './', 
   plugins: [
     vue(),
     tailwindcss(),
