@@ -5,6 +5,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  // Reemplaza 'Proyecto' por el nombre exacto de tu repositorio en GitHub
+  base: '/Proyecto/', 
   plugins: [
     vue(),
     tailwindcss(),

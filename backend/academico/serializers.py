@@ -62,12 +62,6 @@ class AlumnoSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name']
 
 
-class InscripcionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Inscripcion
-        fields = ['id', 'alumno', 'curso']
-
-
 class AsignacionDocenteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AsignacionDocente
@@ -80,7 +74,56 @@ class AsignacionPreceptorSerializer(serializers.ModelSerializer):
         fields = ['id', 'preceptor', 'curso']
 
 
+def _nombre(u):
+    return u.get_full_name() or u.username
+
+
+class InscripcionSerializer(serializers.ModelSerializer):
+    alumno_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Inscripcion
+        fields = ['id', 'alumno', 'alumno_nombre', 'curso']
+
+    def get_alumno_nombre(self, obj):
+        return _nombre(obj.alumno)
+
+
 class VinculoFamiliarSerializer(serializers.ModelSerializer):
+    tutor_nombre = serializers.SerializerMethodField()
+    alumno_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = VinculoFamiliar
-        fields = ['id', 'tutor', 'alumno', 'parentesco']
+        fields = ['id', 'tutor', 'tutor_nombre', 'alumno', 'alumno_nombre', 'parentesco']
+
+    def get_tutor_nombre(self, obj):
+        return _nombre(obj.tutor)
+
+    def get_alumno_nombre(self, obj):
+        return _nombre(obj.alumno)
+
+class InscripcionSerializer(serializers.ModelSerializer):
+    alumno_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Inscripcion
+        fields = ['id', 'alumno', 'alumno_nombre', 'curso']
+
+    def get_alumno_nombre(self, obj):
+        return _nombre(obj.alumno)
+
+
+class VinculoFamiliarSerializer(serializers.ModelSerializer):
+    tutor_nombre = serializers.SerializerMethodField()
+    alumno_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VinculoFamiliar
+        fields = ['id', 'tutor', 'tutor_nombre', 'alumno', 'alumno_nombre', 'parentesco']
+
+    def get_tutor_nombre(self, obj):
+        return _nombre(obj.tutor)
+
+    def get_alumno_nombre(self, obj):
+        return _nombre(obj.alumno)

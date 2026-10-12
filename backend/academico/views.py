@@ -4,6 +4,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.permissions import BasePermission
 
 from asistencias.models import Asistencia
 from calificaciones.models import Calificacion
@@ -255,21 +256,92 @@ class AsignacionPreceptorViewSet(viewsets.ModelViewSet):
     permission_classes = [EsConduccion]
 
 
-# Inscripciones y vínculos familiares: por ahora solo el rol de desarrollo (pasan a los preceptores en la entrega 3)
+def _es_admin(user):
+    return user.is_superuser or user.rol == Rol.ADMIN
+
+
+class EsAdminOPreceptor(BasePermission):
+    def has_permission(self, request, view):
+        u = request.user
+        return bool(u and u.is_authenticated and (_es_admin(u) or u.rol == Rol.PRECEPTOR))
+
+
+def _cursos_del_preceptor(user):
+    return AsignacionPreceptor.objects.filter(preceptor=user).values('curso')
+
+
 class InscripcionViewSet(viewsets.ModelViewSet):
-    queryset = Inscripcion.objects.select_related('alumno', 'curso').order_by('id')
+    """Admin: todo. Preceptor: solo inscripciones de los cursos que tiene a cargo."""
     serializer_class = InscripcionSerializer
-    permission_classes = [EsAdmin]
+    permission_classes = [EsAdminOPreceptor]
+    pagination_class = None  # listados acotados por curso, se devuelven como lista
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Inscripcion.objects.select_related('alumno', 'curso').order_by(
+            'alumno__last_name', 'alumno__first_name', 'alumno__username')
+        if not _es_admin(user):
+            qs = qs.filter(curso__in=_cursos_del_preceptor(user))
+        curso = self.request.query_params.get('curso')
+        if curso and curso.isdigit():
+            qs = qs.filter(curso_id=curso)
+        return qs
+
+    def _controlar_curso(self, curso):
+        user = self.request.user
+        if not _es_admin(user) and not AsignacionPreceptor.objects.filter(
+                preceptor=user, curso=curso).exists():
+            raise PermissionDenied('Ese curso no está a tu cargo.')
+
+    def perform_create(self, serializer):
+        self._controlar_curso(serializer.validated_data['curso'])
+        serializer.save()
+
+    def perform_update(self, serializer):
+        self._controlar_curso(serializer.validated_data.get('curso', serializer.instance.curso))
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        _borrar(instance, 'No se puede quitar al alumno del curso: tiene datos asociados.')
 
 
 class VinculoFamiliarViewSet(viewsets.ModelViewSet):
-    queryset = VinculoFamiliar.objects.select_related('tutor', 'alumno').order_by('id')
+    """Admin: todo. Preceptor: solo vínculos de alumnos inscriptos en sus cursos."""
     serializer_class = VinculoFamiliarSerializer
+    pagination_class = None
 
     def get_permissions(self):
         if self.action == 'mis_alumnos':
             return [EstaAutenticado()]
-        return [EsAdmin()]
+        return [EsAdminOPreceptor()]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = VinculoFamiliar.objects.select_related('tutor', 'alumno').order_by(
+            'alumno__last_name', 'alumno__first_name', 'tutor__last_name', 'tutor__first_name')
+        if not _es_admin(user):
+            alumnos = Inscripcion.objects.filter(
+                curso__in=_cursos_del_preceptor(user)).values('alumno')
+            qs = qs.filter(alumno__in=alumnos)
+        curso = self.request.query_params.get('curso')
+        if curso and curso.isdigit():
+            alumnos_curso = Inscripcion.objects.filter(curso_id=curso).values('alumno')
+            qs = qs.filter(alumno__in=alumnos_curso)
+        return qs
+
+    def _controlar_alumno(self, alumno):
+        user = self.request.user
+        if not _es_admin(user) and not Inscripcion.objects.filter(
+                alumno=alumno, curso__in=_cursos_del_preceptor(user)).exists():
+            raise PermissionDenied('Ese alumno no está en un curso a tu cargo.')
+
+    def perform_create(self, serializer):
+        self._controlar_alumno(serializer.validated_data['alumno'])
+        serializer.save()
+
+    def perform_update(self, serializer):
+        self._controlar_alumno(serializer.validated_data.get('alumno', serializer.instance.alumno))
+        serializer.save()
 
     @action(detail=False, methods=['get'], url_path='mis-alumnos')
     def mis_alumnos(self, request):

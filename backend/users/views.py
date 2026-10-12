@@ -85,6 +85,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Usuario.objects.filter(rol__in=roles_gestionables(user))
+        q = self.request.query_params.get('q', '').strip()
+        if q:
+            qs = qs.filter(
+            q(username__icontains=q) | q(first_name__icontains=q) | q(last_name__icontains=q)
+            )
         if not user.is_superuser:
             qs = qs.exclude(is_superuser=True)  # nadie que no sea superusuario ve ni toca a un superusuario
         rol = self.request.query_params.get('rol')
