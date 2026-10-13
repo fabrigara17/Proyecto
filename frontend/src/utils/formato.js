@@ -40,3 +40,4 @@ export const TIPOS_COMUNICADO = {
   ACTO: 'Acto',
   REUNION: 'Reunión',
 }
+

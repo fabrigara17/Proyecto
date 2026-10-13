@@ -106,3 +106,9 @@ export async function crearVinculo({ tutor, alumno, parentesco }) {
 export async function eliminarVinculo(id) {
   await api.delete(`/api/vinculos-familiares/${id}/`)
 }
+
+// Asistencias, aprobación y estadísticas de un curso (equipo de conducción)
+export async function getSeguimientoCurso(id) {
+  const { data } = await api.get(`/api/cursos/${id}/seguimiento/`)
+  return data
+}

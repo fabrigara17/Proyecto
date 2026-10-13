@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { crearCurso, getCursos, getMaterias } from '@/services/academico'
 import { mensajeError } from '@/utils/errores'
-import { anioCursada } from '@/utils/texto'
+import { anioCursada, COLOR_TURNO, nombreTurno, TURNOS } from '@/utils/texto'
 import AppIcon from '@/components/AppIcon.vue'
 
 const router = useRouter()
@@ -12,6 +12,7 @@ const cursos = ref([])
 const materias = ref([])
 const cargando = ref(true)
 const errorLista = ref('')
+const turnoFiltro = ref(null) // null = todos, 'SIN' = sin turno, o el código del turno
 const anioFiltro = ref(null)
 
 const mostrarForm = ref(false)
@@ -21,13 +22,25 @@ const creando = ref(false)
 const errorForm = ref('')
 
 function formVacio() {
-  return { nombre: '', anio_cursada: '', anio_lectivo: new Date().getFullYear() }
+  return { nombre: '', anio_cursada: '', anio_lectivo: new Date().getFullYear(), turno: '' }
 }
 
 const anios = computed(() => [...new Set(cursos.value.map((c) => c.anio_lectivo))].sort((a, b) => b - a))
+const cantidadSinTurno = computed(() => cursos.value.filter((c) => !c.turno).length)
+
+function cantidadDeTurno(valor) {
+  return cursos.value.filter((c) => c.turno === valor).length
+}
+
 const filtrados = computed(() =>
-  anioFiltro.value === null ? cursos.value : cursos.value.filter((c) => c.anio_lectivo === anioFiltro.value),
+  cursos.value.filter((c) => {
+    if (anioFiltro.value !== null && c.anio_lectivo !== anioFiltro.value) return false
+    if (turnoFiltro.value === null) return true
+    if (turnoFiltro.value === 'SIN') return !c.turno
+    return c.turno === turnoFiltro.value
+  }),
 )
+
 const todasTildadas = computed(
   () => materias.value.length > 0 && elegidas.value.length === materias.value.length,
 )
@@ -63,6 +76,7 @@ async function crear() {
       nombre: form.value.nombre.trim(),
       anio_cursada: form.value.anio_cursada ? Number(form.value.anio_cursada) : null,
       anio_lectivo: Number(form.value.anio_lectivo),
+      turno: form.value.turno,
       materias: elegidas.value,
     })
     // Al crearlo se pasa directo al detalle, para asignar preceptor y profesores
@@ -102,12 +116,19 @@ async function crear() {
         <input v-model="form.nombre" required maxlength="50" placeholder="Ej: 6°M" class="campo" />
       </label>
 
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid gap-3 sm:grid-cols-3">
         <label class="block">
           <span class="text-sm font-semibold text-slate-600">Año de cursada</span>
           <select v-model="form.anio_cursada" class="campo">
             <option value="">Sin especificar</option>
             <option v-for="n in 7" :key="n" :value="n">{{ n }}º año</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="text-sm font-semibold text-slate-600">Turno</span>
+          <select v-model="form.turno" class="campo">
+            <option value="">Sin turno</option>
+            <option v-for="t in TURNOS" :key="t.valor" :value="t.valor">{{ t.texto }}</option>
           </select>
         </label>
         <label class="block">
@@ -150,23 +171,54 @@ async function crear() {
       </div>
     </form>
 
+    <!-- Filtro por turno -->
+    <div class="mt-6 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        @click="turnoFiltro = null"
+        class="rounded-full px-3 py-1.5 text-sm font-bold transition"
+        :class="turnoFiltro === null ? 'bg-brand text-white' : 'bg-slate-200/70 text-slate-600'"
+      >
+        Todos ({{ cursos.length }})
+      </button>
+      <button
+        v-for="t in TURNOS"
+        :key="t.valor"
+        type="button"
+        @click="turnoFiltro = t.valor"
+        class="rounded-full px-3 py-1.5 text-sm font-bold transition"
+        :class="turnoFiltro === t.valor ? 'bg-brand text-white' : 'bg-slate-200/70 text-slate-600'"
+      >
+        {{ t.texto }} ({{ cantidadDeTurno(t.valor) }})
+      </button>
+      <button
+        v-if="cantidadSinTurno"
+        type="button"
+        @click="turnoFiltro = 'SIN'"
+        class="rounded-full px-3 py-1.5 text-sm font-bold transition"
+        :class="turnoFiltro === 'SIN' ? 'bg-brand text-white' : 'bg-slate-200/70 text-slate-600'"
+      >
+        Sin turno ({{ cantidadSinTurno }})
+      </button>
+    </div>
+
     <!-- Filtro por año lectivo -->
-    <div v-if="anios.length > 1" class="mt-6 flex flex-wrap items-center gap-2">
+    <div v-if="anios.length > 1" class="mt-3 flex flex-wrap items-center gap-2">
       <button
         type="button"
         @click="anioFiltro = null"
-        class="rounded-full px-3 py-1 text-sm font-bold transition"
-        :class="anioFiltro === null ? 'bg-brand text-white' : 'bg-slate-200/70 text-slate-600'"
+        class="rounded-full px-3 py-1 text-xs font-bold transition"
+        :class="anioFiltro === null ? 'bg-slate-700 text-white' : 'bg-slate-200/70 text-slate-600'"
       >
-        Todos
+        Todos los años
       </button>
       <button
         v-for="a in anios"
         :key="a"
         type="button"
         @click="anioFiltro = a"
-        class="rounded-full px-3 py-1 text-sm font-bold transition"
-        :class="anioFiltro === a ? 'bg-brand text-white' : 'bg-slate-200/70 text-slate-600'"
+        class="rounded-full px-3 py-1 text-xs font-bold transition"
+        :class="anioFiltro === a ? 'bg-slate-700 text-white' : 'bg-slate-200/70 text-slate-600'"
       >
         {{ a }}
       </button>
@@ -176,7 +228,7 @@ async function crear() {
     <p v-else-if="errorLista" role="alert" class="mt-6 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">
       {{ errorLista }}
     </p>
-    <p v-else-if="!filtrados.length" class="mt-6 text-slate-500">Todavía no hay cursos.</p>
+    <p v-else-if="!filtrados.length" class="mt-6 text-slate-500">No hay cursos para mostrar.</p>
 
     <ul v-else class="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
       <li v-for="c in filtrados" :key="c.id">
@@ -185,7 +237,16 @@ async function crear() {
           class="flex items-center gap-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm transition hover:border-brand"
         >
           <span class="min-w-0 flex-1">
-            <span class="block truncate font-bold text-slate-900">{{ c.nombre }}</span>
+            <span class="flex items-center gap-2">
+              <span class="truncate font-bold text-slate-900">{{ c.nombre }}</span>
+              <span
+                v-if="c.turno"
+                class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                :class="COLOR_TURNO[c.turno]"
+              >
+                {{ nombreTurno(c.turno) }}
+              </span>
+            </span>
             <span class="block text-xs text-slate-500">
               {{ anioCursada(c.anio_cursada) }} · Año lectivo {{ c.anio_lectivo }}
             </span>

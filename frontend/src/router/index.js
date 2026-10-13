@@ -68,6 +68,7 @@ const router = createRouter({
       component: () => import('../views/AlumnosView.vue'),
       meta: { roles: ['PRECEPTOR', 'ADMIN'] },
     },
+    { path: '/calendario', name: 'calendario', component: () => import('../views/CalendarioView.vue') },
   ],
 })
 

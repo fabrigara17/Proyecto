@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Prefetch, ProtectedError
+from django.conf import settings
+from django.db.models import Avg, Count, Prefetch, ProtectedError, Q
+from django.db.models.functions import TruncMonth
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -35,6 +37,13 @@ def _alumnos_a_cargo(user):
 
 def _nombre(u):
     return u.get_full_name() or u.username
+
+def _redondear(valor, decimales=2):
+    return None if valor is None else round(float(valor), decimales)
+
+
+def _porcentaje(parte, total):
+    return None if not total else round(parte * 100 / total, 1)
 
 
 def _borrar(instance, mensaje):
@@ -129,6 +138,8 @@ class CursoViewSet(SoloConduccionSalvoAcciones, viewsets.ModelViewSet):
         return Response({
             'id': curso.id,
             'nombre': curso.nombre,
+            'turno': curso.turno,
+            'turno_display': curso.get_turno_display(),
             'anio_cursada': curso.anio_cursada,
             'anio_lectivo': curso.anio_lectivo,
             'materias': [{
@@ -173,6 +184,142 @@ class CursoViewSet(SoloConduccionSalvoAcciones, viewsets.ModelViewSet):
             raise ValidationError('No se puede eliminar el curso: tiene materiales cargados.')
         _borrar(instance, 'No se puede eliminar el curso: tiene datos asociados.')
 
+
+    @action(detail=True, methods=['get'])
+    def seguimiento(self, request, pk=None):
+        """Asistencias, aprobación y estadísticas de un curso (equipo de conducción)."""
+        curso = self.get_object()
+        minima = getattr(settings, 'NOTA_APROBACION', 6)
+
+        alumnos = list(
+            Usuario.objects.filter(inscripciones__curso=curso)
+            .order_by('last_name', 'first_name', 'username')
+        )
+        ids = [a.id for a in alumnos]
+        nombres = {a.id: _nombre(a) for a in alumnos}
+
+        # ---- Asistencias ----
+        registros = Asistencia.objects.filter(curso=curso, alumno_id__in=ids)
+        por_alumno = {
+            f['alumno']: f
+            for f in registros.values('alumno').annotate(
+                total=Count('id'), presentes=Count('id', filter=Q(presente=True)),
+            ).order_by()
+        }
+        asistencia_alumnos = []
+        for a in alumnos:
+            f = por_alumno.get(a.id, {'total': 0, 'presentes': 0})
+            asistencia_alumnos.append({
+                'alumno': a.id,
+                'alumno_nombre': nombres[a.id],
+                'presentes': f['presentes'],
+                'ausentes': f['total'] - f['presentes'],
+                'porcentaje': _porcentaje(f['presentes'], f['total']),
+            })
+        # Primero los de menor asistencia; los que no tienen registros, al final
+        asistencia_alumnos.sort(key=lambda x: (
+            x['porcentaje'] is None,
+            x['porcentaje'] if x['porcentaje'] is not None else 0,
+            x['alumno_nombre'],
+        ))
+        totales = registros.aggregate(
+            total=Count('id'),
+            presentes=Count('id', filter=Q(presente=True)),
+            dias=Count('fecha', distinct=True),
+        )
+        asistencia = {
+            'dias_registrados': totales['dias'],
+            'presentes': totales['presentes'],
+            'ausentes': totales['total'] - totales['presentes'],
+            'porcentaje': _porcentaje(totales['presentes'], totales['total']),
+            'por_alumno': asistencia_alumnos,
+        }
+
+        # ---- Aprobación ----
+        notas = Calificacion.objects.filter(curso=curso, alumno_id__in=ids)
+        promedios = list(notas.values('alumno', 'materia').annotate(promedio=Avg('nota')).order_by())
+        por_materia_notas = {
+            f['materia']: f
+            for f in notas.values('materia').annotate(
+                promedio=Avg('nota'), cantidad=Count('id'),
+            ).order_by()
+        }
+        evaluados, aprobados, desaprobadas = {}, {}, {}
+        for p in promedios:
+            m, al = p['materia'], p['alumno']
+            evaluados[m] = evaluados.get(m, 0) + 1
+            if p['promedio'] >= minima:
+                aprobados[m] = aprobados.get(m, 0) + 1
+            else:
+                desaprobadas[al] = desaprobadas.get(al, 0) + 1
+
+        por_materia = []
+        plan = MateriaCurso.objects.filter(curso=curso).select_related('materia').order_by('materia__nombre')
+        for mc in plan:
+            s = por_materia_notas.get(mc.materia_id)
+            n_eval = evaluados.get(mc.materia_id, 0)
+            n_apr = aprobados.get(mc.materia_id, 0)
+            por_materia.append({
+                'materia': mc.materia_id,
+                'materia_nombre': mc.materia.nombre,
+                'cantidad_notas': s['cantidad'] if s else 0,
+                'promedio': _redondear(s['promedio']) if s else None,
+                'evaluados': n_eval,
+                'aprobados': n_apr,
+                'desaprobados': n_eval - n_apr,
+                'porcentaje_aprobacion': _porcentaje(n_apr, n_eval),
+            })
+        en_riesgo = sorted(
+            (
+                {'alumno': al, 'alumno_nombre': nombres.get(al, ''), 'materias_desaprobadas': n}
+                for al, n in desaprobadas.items()
+            ),
+            key=lambda x: (-x['materias_desaprobadas'], x['alumno_nombre']),
+        )
+        aprobacion = {
+            'nota_minima': minima,
+            'por_materia': por_materia,
+            'alumnos_en_riesgo': en_riesgo,
+        }
+
+        # ---- Estadísticas ----
+        por_mes = (
+            registros.annotate(mes=TruncMonth('fecha')).values('mes')
+            .annotate(total=Count('id'), presentes=Count('id', filter=Q(presente=True)))
+            .order_by('mes')
+        )
+        notas_resumen = notas.aggregate(
+            promedio=Avg('nota'),
+            bajo=Count('id', filter=Q(nota__lt=4)),
+            medio_bajo=Count('id', filter=Q(nota__gte=4, nota__lt=6)),
+            medio_alto=Count('id', filter=Q(nota__gte=6, nota__lt=8)),
+            alto=Count('id', filter=Q(nota__gte=8)),
+        )
+        estadisticas = {
+            'total_alumnos': len(alumnos),
+            'total_materias': len(por_materia),
+            'promedio_general': _redondear(notas_resumen['promedio']),
+            'asistencia_por_mes': [
+                {
+                    'mes': f['mes'].strftime('%Y-%m'),
+                    'porcentaje': _porcentaje(f['presentes'], f['total']),
+                    'registros': f['total'],
+                }
+                for f in por_mes
+            ],
+            'distribucion_notas': [
+                {'rango': '1 a 3', 'cantidad': notas_resumen['bajo']},
+                {'rango': '4 a 5', 'cantidad': notas_resumen['medio_bajo']},
+                {'rango': '6 a 7', 'cantidad': notas_resumen['medio_alto']},
+                {'rango': '8 a 10', 'cantidad': notas_resumen['alto']},
+            ],
+        }
+
+        return Response({
+            'asistencia': asistencia,
+            'aprobacion': aprobacion,
+            'estadisticas': estadisticas,
+        })
 
 class MateriaViewSet(SoloConduccionSalvoAcciones, viewsets.ModelViewSet):
     queryset = Materia.objects.all()

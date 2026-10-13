@@ -3,6 +3,12 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 
+class Turno(models.TextChoices):
+    MANANA = 'MANANA', 'Turno mañana'
+    TARDE = 'TARDE', 'Turno tarde'
+    VESPERTINO = 'VESPERTINO', 'Turno vespertino'
+
+
 class Curso(models.Model):
     nombre = models.CharField(max_length=50)  # "6°M"
     anio_cursada = models.PositiveSmallIntegerField(
@@ -10,6 +16,7 @@ class Curso(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(7)],
     )  # 1 a 7: "6to año"
     anio_lectivo = models.PositiveSmallIntegerField('año lectivo')
+    turno = models.CharField(max_length=12, choices=Turno.choices, blank=True, default='')
 
     class Meta:
         ordering = ['-anio_lectivo', 'nombre']

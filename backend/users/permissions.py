@@ -67,3 +67,6 @@ EsAdminOPreceptor = EsConduccionOPreceptor
 class PuedeGestionarUsuarios(TieneRol):
     """Quiénes pueden entrar a la gestión de usuarios. Qué roles puede tocar cada uno lo decide roles_gestionables()."""
     roles_permitidos = (Rol.ADMIN, Rol.CONDUCCION, Rol.PRECEPTOR)
+
+class PuedeEditarCalendario(TieneRol):
+    roles_permitidos = (Rol.ADMIN, Rol.CONDUCCION, Rol.DOCENTE, Rol.PRECEPTOR)

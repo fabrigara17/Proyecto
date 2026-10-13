@@ -1,4 +1,4 @@
-from django.db.models import Case, IntegerField, Value, When
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
@@ -85,10 +85,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Usuario.objects.filter(rol__in=roles_gestionables(user))
-        q = self.request.query_params.get('q', '').strip()
-        if q:
+        texto = self.request.query_params.get('q', '').strip()
+        if texto:
             qs = qs.filter(
-            q(username__icontains=q) | q(first_name__icontains=q) | q(last_name__icontains=q)
+                Q(username__icontains=texto) | Q(first_name__icontains=texto) | Q(last_name__icontains=texto)
             )
         if not user.is_superuser:
             qs = qs.exclude(is_superuser=True)  # nadie que no sea superusuario ve ni toca a un superusuario

@@ -1,16 +1,22 @@
-from rest_framework import serializers
-from users.models import Usuario
 from django.db import transaction
+from rest_framework import serializers
+
+from users.models import Usuario
 from .models import (
     Curso, Materia, MateriaCurso, Inscripcion, AsignacionDocente,
     AsignacionPreceptor, VinculoFamiliar,
 )
 
 
+def _nombre(u):
+    return u.get_full_name() or u.username
+
+
 class CursoSerializer(serializers.ModelSerializer):
     # Los contadores los calcula el listado; en las demás respuestas se omiten
     cant_alumnos = serializers.IntegerField(read_only=True)
     cant_materias = serializers.IntegerField(read_only=True)
+    turno_display = serializers.CharField(source='get_turno_display', read_only=True)
     # Al crear el curso se pueden indicar todas sus materias de una vez
     materias = serializers.PrimaryKeyRelatedField(
         queryset=Materia.objects.all(), many=True, write_only=True, required=False,
@@ -18,7 +24,10 @@ class CursoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Curso
-        fields = ['id', 'nombre', 'anio_cursada', 'anio_lectivo', 'cant_alumnos', 'cant_materias', 'materias']
+        fields = [
+            'id', 'nombre', 'anio_cursada', 'anio_lectivo', 'turno', 'turno_display',
+            'cant_alumnos', 'cant_materias', 'materias',
+        ]
 
     def create(self, validated_data):
         materias = validated_data.pop('materias', [])
@@ -32,6 +41,7 @@ class CursoSerializer(serializers.ModelSerializer):
         # Las materias de un curso existente se agregan con la acción "agregar-materias"
         validated_data.pop('materias', None)
         return super().update(instance, validated_data)
+
 
 class MateriaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -73,35 +83,6 @@ class AsignacionPreceptorSerializer(serializers.ModelSerializer):
         model = AsignacionPreceptor
         fields = ['id', 'preceptor', 'curso']
 
-
-def _nombre(u):
-    return u.get_full_name() or u.username
-
-
-class InscripcionSerializer(serializers.ModelSerializer):
-    alumno_nombre = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Inscripcion
-        fields = ['id', 'alumno', 'alumno_nombre', 'curso']
-
-    def get_alumno_nombre(self, obj):
-        return _nombre(obj.alumno)
-
-
-class VinculoFamiliarSerializer(serializers.ModelSerializer):
-    tutor_nombre = serializers.SerializerMethodField()
-    alumno_nombre = serializers.SerializerMethodField()
-
-    class Meta:
-        model = VinculoFamiliar
-        fields = ['id', 'tutor', 'tutor_nombre', 'alumno', 'alumno_nombre', 'parentesco']
-
-    def get_tutor_nombre(self, obj):
-        return _nombre(obj.tutor)
-
-    def get_alumno_nombre(self, obj):
-        return _nombre(obj.alumno)
 
 class InscripcionSerializer(serializers.ModelSerializer):
     alumno_nombre = serializers.SerializerMethodField()

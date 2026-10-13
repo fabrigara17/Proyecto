@@ -52,7 +52,7 @@ onMounted(async () => {
 
 <template>
   <div class="pagina">
-    <h1 class="titulo-pagina">Historial</h1>
+    <h1 class="titulo-pagina">Desempeño Académico</h1>
 
     <ChipsAlumnos class="mt-3" />
 

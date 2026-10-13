@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'materiales',
     'notificaciones',
     'users',
+    'calendario',
 
     # apps de terceros
     'rest_framework',
@@ -120,3 +121,4 @@ MAILERS = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+NOTA_APROBACION = 6  # promedio mínimo para aprobar una materia
