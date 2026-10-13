@@ -20,13 +20,13 @@ const CURSOS = { to: '/cursos', texto: 'Cursos', icono: 'academic-cap' }
 const MATERIAS = { to: '/materias', texto: 'Materias', icono: 'book-open' }
 const EQUIPO = { to: '/equipo', texto: 'Equipo', icono: 'users' }
 const USUARIOS = { to: '/usuarios', texto: 'Usuarios', icono: 'user-plus' }
+const CHAT = { to: '/chat', texto: 'Chat', icono: 'chat' }
 
-// Familia, alumno y docente
-const ITEMS_BASE = [INICIO, CALENDARIO, COMUNICADOS, DESEMPENO, AVISOS, PERFIL, MATERIALES]
-const ITEMS_PRECEPTOR = [INICIO, CALENDARIO, COMUNICADOS, ASISTENCIAS, ALUMNOS, AVISOS, PERFIL, MATERIALES]
-const ITEMS_CONDUCCION = [INICIO, CALENDARIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, PERFIL]
-// El rol de desarrollo: lo mismo que conducción, más Usuarios
-const ITEMS_ADMIN = [INICIO, CALENDARIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, USUARIOS, PERFIL]
+// Estructura original de los arreglos de roles con Chat incorporado
+const ITEMS_BASE = [INICIO, CALENDARIO, COMUNICADOS, DESEMPENO, CHAT, AVISOS, PERFIL, MATERIALES]
+const ITEMS_PRECEPTOR = [INICIO, CALENDARIO, COMUNICADOS, ASISTENCIAS, ALUMNOS, CHAT, AVISOS, PERFIL, MATERIALES]
+const ITEMS_CONDUCCION = [INICIO, CALENDARIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, PERFIL]
+const ITEMS_ADMIN = [INICIO, CALENDARIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, USUARIOS, PERFIL]
 
 const items = computed(() => {
   if (auth.rol === 'ADMIN') return ITEMS_ADMIN
@@ -35,7 +35,6 @@ const items = computed(() => {
   return ITEMS_BASE
 })
 
-// Celular: hasta 5 ítems entran en la barra; si hay más, 4 y un botón "Más"
 const MAXIMO_EN_BARRA = 5
 const visibles = computed(() => (items.value.length > MAXIMO_EN_BARRA ? items.value.slice(0, 4) : items.value))
 const extra = computed(() => (items.value.length > MAXIMO_EN_BARRA ? items.value.slice(4) : []))
@@ -50,7 +49,6 @@ const extraActivo = computed(() => extra.value.some(activo))
 </script>
 
 <template>
-  <!-- Celular: barra inferior -->
   <nav class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
     <div v-if="masAbierto && extra.length" class="border-b border-slate-100 px-3 py-2">
       <ul class="mx-auto grid max-w-lg grid-cols-4 gap-1">
@@ -98,7 +96,6 @@ const extraActivo = computed(() => extra.value.some(activo))
     </ul>
   </nav>
 
-  <!-- Computadora: barra lateral -->
   <aside class="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-slate-200 bg-white p-4 md:flex">
     <div class="mb-6 flex items-center gap-3 px-2 pt-2">
       <span class="grid size-10 place-items-center rounded-xl bg-brand text-white">

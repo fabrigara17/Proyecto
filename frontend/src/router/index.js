@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getPerfil } from '@/services/auth'
 import InicioView from '../views/InicioView.vue'
+import ChatView from '../views/ChatView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,7 +69,17 @@ const router = createRouter({
       component: () => import('../views/AlumnosView.vue'),
       meta: { roles: ['PRECEPTOR', 'ADMIN'] },
     },
-    { path: '/calendario', name: 'calendario', component: () => import('../views/CalendarioView.vue') },
+    { 
+      path: '/calendario', 
+      name: 'calendario', 
+      component: () => import('../views/CalendarioView.vue') 
+    },
+    {
+      path: '/chat',
+      name: 'chat',
+      component: ChatView,
+      meta: { requiresAuth: true }
+    }
   ],
 })
 

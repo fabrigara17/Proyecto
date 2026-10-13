@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'notificaciones',
     'users',
     'calendario',
+    'chat',
 
     # apps de terceros
     'rest_framework',

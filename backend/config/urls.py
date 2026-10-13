@@ -13,6 +13,7 @@ from materiales.views import MaterialViewSet
 from notificaciones.views import NotificacionesViewSet
 from users.views import LoginView, UsuarioViewSet, perfil, cambiar_password, logout
 from calendario.views import EventoViewSet
+from chat.views import ConversacionViewSet, MensajeViewSet
 
 router = DefaultRouter()
 router.register('usuarios', UsuarioViewSet, basename='usuario')
@@ -30,6 +31,8 @@ router.register('materiales', MaterialViewSet, basename='material')
 router.register('asignaciones-preceptor', AsignacionPreceptorViewSet, basename='asignacion-preceptor')
 router.register('dias-sin-clases', DiaSinClasesViewSet, basename='dia-sin-clases')
 router.register('eventos', EventoViewSet, basename='evento')
+router.register('conversaciones', ConversacionViewSet, basename='conversacion')
+router.register('mensajes', MensajeViewSet, basename='mensaje')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
