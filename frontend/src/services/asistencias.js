@@ -5,11 +5,6 @@ export function getAsistencias() {
   return listarTodo('/api/asistencias/')
 }
 
-export async function crearAsistencia(payload) {
-  const { data } = await api.post('/api/asistencias/', payload)
-  return data
-}
-
 // Cursos asignados al usuario (para el preceptor: los suyos)
 export async function getCursosAsignados() {
   const { data } = await api.get('/api/cursos/mis-cursos/')
@@ -21,16 +16,46 @@ export async function getAlumnosDeCurso(cursoId) {
   return data
 }
 
-// Registros ya cargados de un curso en un día (fecha en formato YYYY-MM-DD)
-export function getAsistenciasDelDia(cursoId, fecha) {
-  return listarTodo('/api/asistencias/', { curso: cursoId, fecha })
-}
+// ---- Horario semanal ----
 
-// registros: [{ alumno: id, presente: true|false }]
-export async function tomarAsistencia({ curso, fecha, registros }) {
-  const { data } = await api.post('/api/asistencias/tomar/', { curso, fecha, registros })
+// Materias de los cursos del usuario (cada una con su id de plan: "materia_curso"). Sirven para armar el horario
+export async function getMateriasDeMisCursos() {
+  const { data } = await api.get('/api/plan-estudios/mis-materias/')
   return data
 }
+
+// Clases del horario de un curso. diaSemana opcional: 0 = lunes ... 4 = viernes
+export async function getHorarios(cursoId, diaSemana) {
+  const params = { curso: cursoId }
+  if (diaSemana !== undefined) params.dia_semana = diaSemana
+  const { data } = await api.get('/api/horarios/', { params })
+  return data
+}
+
+// payload: { curso, materia_curso, dia_semana, hora_inicio: 'HH:MM', hora_fin: 'HH:MM' }
+export async function crearClase(payload) {
+  const { data } = await api.post('/api/horarios/', payload)
+  return data
+}
+
+export async function eliminarClase(id) {
+  await api.delete(`/api/horarios/${id}/`)
+}
+
+// ---- Asistencia por clase ----
+
+// Registros ya cargados de una clase en un día (fecha en formato YYYY-MM-DD)
+export function getAsistenciasDeClase(claseId, fecha) {
+  return listarTodo('/api/asistencias/', { clase: claseId, fecha })
+}
+
+// registros: [{ alumno: id, estado: 'PRESENTE' | 'AUSENTE' | 'TARDE' | 'RETIRO' }]
+export async function tomarAsistencia({ clase, fecha, registros }) {
+  const { data } = await api.post('/api/asistencias/tomar/', { clase, fecha, registros })
+  return data
+}
+
+// ---- Días sin clases ----
 
 // Días sin clases que afectan a un curso en una fecha (los del curso y los de todo el colegio)
 export function getDiasSinClases(cursoId, fecha) {

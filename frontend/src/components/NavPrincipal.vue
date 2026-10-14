@@ -20,16 +20,21 @@ const MATERIAS = { to: '/materias', texto: 'Materias', icono: 'book-open' }
 const EQUIPO = { to: '/equipo', texto: 'Equipo', icono: 'users' }
 const USUARIOS = { to: '/usuarios', texto: 'Usuarios', icono: 'user-plus' }
 const CHAT = { to: '/chat', texto: 'Chat', icono: 'chat' }
+const HORARIOS = { to: '/horarios', texto: 'Horarios', icono: 'calendar' }
+const NOTAS = { to: '/notas', texto: 'Cargar notas', icono: 'academic-cap' }
+const ETAPAS = { to: '/etapas', texto: 'Etapas de notas', icono: 'calendar' }
 
 const ITEMS_BASE = [INICIO, COMUNICADOS, DESEMPENO, CHAT, AVISOS, PERFIL, MATERIALES]
-const ITEMS_PRECEPTOR = [INICIO, COMUNICADOS, ASISTENCIAS, ALUMNOS, CHAT, AVISOS, PERFIL, MATERIALES]
-const ITEMS_CONDUCCION = [INICIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, PERFIL]
-const ITEMS_ADMIN = [INICIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, USUARIOS, PERFIL]
+const ITEMS_DOCENTE = [INICIO, COMUNICADOS, ASISTENCIAS, NOTAS, DESEMPENO, CHAT, AVISOS, PERFIL, MATERIALES]
+const ITEMS_PRECEPTOR = [INICIO, COMUNICADOS, ASISTENCIAS, HORARIOS, ALUMNOS, CHAT, AVISOS, PERFIL, MATERIALES]
+const ITEMS_CONDUCCION = [INICIO, CURSOS, MATERIAS, EQUIPO, ETAPAS, COMUNICADOS, CHAT, PERFIL]
+const ITEMS_ADMIN = [INICIO, CURSOS, MATERIAS, EQUIPO, ETAPAS, COMUNICADOS, CHAT, USUARIOS, PERFIL]
 
 const items = computed(() => {
   if (auth.rol === 'ADMIN') return ITEMS_ADMIN
   if (auth.rol === 'CONDUCCION') return ITEMS_CONDUCCION
   if (auth.rol === 'PRECEPTOR') return ITEMS_PRECEPTOR
+  if (auth.rol === 'DOCENTE') return ITEMS_DOCENTE
   return ITEMS_BASE
 })
 

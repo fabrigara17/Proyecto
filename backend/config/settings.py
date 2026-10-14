@@ -13,7 +13,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [h for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h]
+ALLOWED_HOSTS = ['192.168.0.125', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -36,9 +36,9 @@ INSTALLED_APPS = [
     'chat',
 
     # apps de terceros
+    'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
-    'corsheaders',
 ]
 
 REST_FRAMEWORK = {
@@ -66,6 +66,8 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://192.168.0.125:5173",
 ]
 
 ROOT_URLCONF = 'config.urls'

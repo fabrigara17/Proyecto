@@ -25,13 +25,31 @@ const router = createRouter({
       path: '/asistencias',
       name: 'asistencias',
       component: () => import('../views/AsistenciasView.vue'),
-      meta: { roles: ['PRECEPTOR'] },
+      meta: { roles: ['PRECEPTOR', 'DOCENTE'] },
     },
     {
       path: '/asistencias/:cursoId',
       name: 'asistencia-curso',
       component: () => import('../views/AsistenciaCursoView.vue'),
-      meta: { roles: ['PRECEPTOR'] },
+      meta: { roles: ['PRECEPTOR', 'DOCENTE'] },
+    },
+    {
+      path: '/horarios',
+      name: 'horarios',
+      component: () => import('../views/HorariosView.vue'),
+      meta: { roles: ['PRECEPTOR', 'ADMIN', 'CONDUCCION'] },
+    },
+        {
+      path: '/notas',
+      name: 'notas',
+      component: () => import('../views/CargaNotasView.vue'),
+      meta: { roles: ['DOCENTE'] },
+    },
+    {
+      path: '/etapas',
+      name: 'etapas',
+      component: () => import('../views/EtapasView.vue'),
+      meta: { roles: ['ADMIN', 'CONDUCCION'] },
     },
     {
       path: '/usuarios',
