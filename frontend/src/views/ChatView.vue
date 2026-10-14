@@ -1,9 +1,13 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import chatService from '@/services/chat'
-import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
 import { useAuthStore } from '@/stores/auth'
+import { mensajeError } from '@/utils/errores'
+
+// Mismos límites que valida el backend (chat/serializers.py)
+const EXTENSIONES_PERMITIDAS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png', '.txt']
+const MAX_MB = 10
 
 const auth = useAuthStore()
 const conversaciones = ref([])
@@ -12,6 +16,11 @@ const mensajes = ref([])
 const nuevoTexto = ref('')
 const cargando = ref(false)
 
+const archivoSeleccionado = ref(null)
+const inputArchivo = ref(null)
+const enviando = ref(false)
+const errorEnvio = ref('')
+
 const modalAbierto = ref(false)
 const usuariosDisponibles = ref([])
 const filtroRol = ref('todos')
@@ -19,24 +28,40 @@ const busquedaTexto = ref('')
 
 const esAlumnoOFamiliar = computed(() => {
   const r = String(auth.rol || '').toUpperCase()
-  return r === 'ALUMNO' || r === 'FAMILIAR'
+  return r === 'ALUMNO' || r === 'FAMILIA'
 })
 
 async function cargarConversaciones() {
   try {
-    const response = await chatService.obtenerConversaciones()
-    conversaciones.value = response.data
+    conversaciones.value = await chatService.obtenerConversaciones()
   } catch (error) {
     console.error("Error al cargar conversaciones:", error)
   }
 }
 
+function nombreOtro(conv) {
+  if (!conv) return ''
+  const otro = conv.participante_1 === auth.usuario?.id
+    ? conv.participante_2_detalles
+    : conv.participante_1_detalles
+  if (!otro) return 'Usuario'
+  const nombre = `${otro.first_name || ''} ${otro.last_name || ''}`.trim()
+  return nombre || otro.username
+}
+
+function previewUltimo(conv) {
+  const m = conv.ultimo_mensaje
+  if (!m) return 'Sin mensajes aún'
+  return m.texto || `📎 ${m.archivo_nombre}`
+}
+
 async function seleccionarChat(conv) {
   conversacionActiva.value = conv
+  limpiarArchivo()
+  errorEnvio.value = ''
   cargando.value = true
   try {
-    const response = await chatService.obtenerMensajes(conv.id)
-    mensajes.value = response.data
+    mensajes.value = await chatService.obtenerMensajes(conv.id)
   } catch (error) {
     console.error("Error al cargar mensajes:", error)
   } finally {
@@ -44,14 +69,52 @@ async function seleccionarChat(conv) {
   }
 }
 
+function elegirArchivo(e) {
+  const f = e.target.files?.[0]
+  e.target.value = '' // permite volver a elegir el mismo archivo
+  if (!f) return
+  errorEnvio.value = ''
+
+  const ext = f.name.includes('.') ? '.' + f.name.split('.').pop().toLowerCase() : ''
+  if (!EXTENSIONES_PERMITIDAS.includes(ext)) {
+    errorEnvio.value = `Tipo de archivo no permitido. Podés enviar: ${EXTENSIONES_PERMITIDAS.map(x => x.slice(1)).join(', ')}.`
+    return
+  }
+  if (f.size > MAX_MB * 1024 * 1024) {
+    errorEnvio.value = `El archivo supera los ${MAX_MB} MB.`
+    return
+  }
+  archivoSeleccionado.value = f
+}
+
+function limpiarArchivo() {
+  archivoSeleccionado.value = null
+  if (inputArchivo.value) inputArchivo.value.value = ''
+}
+
+function tamanioLegible(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+async function descargarAdjunto(msg) {
+  try {
+    await chatService.descargarAdjunto(msg)
+  } catch (error) {
+    console.error("Error al descargar archivo:", error)
+    errorEnvio.value = 'No se pudo descargar el archivo.'
+  }
+}
+
 async function abrirModalNuevaConversacion() {
+  busquedaTexto.value = ''
   modalAbierto.value = true
   await cargarUsuariosDisponibles()
 }
 
 async function cargarUsuariosDisponibles() {
   try {
-    const response = await api.get(`/conversaciones/usuarios_disponibles/?rol=${filtroRol.value}`)
+    const response = await chatService.obtenerUsuariosDisponibles(filtroRol.value)
     usuariosDisponibles.value = response.data
   } catch (error) {
     console.error("Error al cargar usuarios disponibles:", error)
@@ -76,6 +139,16 @@ const usuariosFiltrados = computed(() => {
 })
 
 async function iniciarChatCon(usuarioId) {
+  // Si ya existe una conversación con esa persona, la abrimos en vez de duplicarla
+  const existente = conversaciones.value.find(
+    c => c.participante_1 === usuarioId || c.participante_2 === usuarioId
+  )
+  if (existente) {
+    modalAbierto.value = false
+    seleccionarChat(existente)
+    return
+  }
+
   try {
     const response = await chatService.crearConversacion({ participante_2: usuarioId })
     modalAbierto.value = false
@@ -87,19 +160,27 @@ async function iniciarChatCon(usuarioId) {
 }
 
 async function enviarMensaje() {
-  if (!nuevoTexto.value.trim() || !conversacionActiva.value) return
-  const textoTemp = nuevoTexto.value
-  nuevoTexto.value = ''
+  const texto = nuevoTexto.value.trim()
+  const archivo = archivoSeleccionado.value
+  if ((!texto && !archivo) || !conversacionActiva.value || enviando.value) return
 
+  enviando.value = true
+  errorEnvio.value = ''
   try {
     const response = await chatService.enviarMensaje({
       conversacion: conversacionActiva.value.id,
-      texto: textoTemp
+      texto,
+      archivo,
     })
     mensajes.value.push(response.data)
+    nuevoTexto.value = ''
+    limpiarArchivo()
+    cargarConversaciones() // refresca el último mensaje en la lista
   } catch (error) {
     console.error("Error al enviar mensaje:", error)
-    nuevoTexto.value = textoTemp
+    errorEnvio.value = mensajeError(error, 'No se pudo enviar el mensaje.')
+  } finally {
+    enviando.value = false
   }
 }
 
@@ -141,10 +222,10 @@ onMounted(() => {
           </div>
           <div class="flex-1 min-w-0">
             <h2 class="font-semibold text-slate-800 truncate">
-              {{ conv.participante_1.id === auth.user?.id ? (conv.participante_2.first_name || conv.participante_2.username) : (conv.participante_1.first_name || conv.participante_1.username) }}
+              {{ nombreOtro(conv) }}
             </h2>
             <p class="text-xs text-slate-500 truncate">
-              {{ conv.ultimo_mensaje ? conv.ultimo_mensaje.texto : 'Sin mensajes aún' }}
+              {{ previewUltimo(conv) }}
             </p>
           </div>
         </div>
@@ -158,7 +239,7 @@ onMounted(() => {
           <button @click="conversacionActiva = null" class="md:hidden text-slate-500">
             <AppIcon name="arrow-left" class="size-6" />
           </button>
-          <h2 class="font-bold text-slate-800">Conversación</h2>
+          <h2 class="font-bold text-slate-800 truncate flex-1 min-w-0">{{ nombreOtro(conversacionActiva) }}</h2>
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
@@ -167,26 +248,70 @@ onMounted(() => {
             v-for="msg in mensajes" 
             :key="msg.id"
             class="max-w-[75%] rounded-2xl px-4 py-2 text-sm shadow-xs"
-            :class="msg.remisor === auth.user?.id ? 'bg-brand text-white self-end rounded-br-none' : 'bg-white text-slate-800 self-start border border-slate-200 rounded-bl-none'"
+            :class="msg.remisor === auth.usuario?.id ? 'bg-brand text-white self-end rounded-br-none' : 'bg-white text-slate-800 self-start border border-slate-200 rounded-bl-none'"
           >
-            <p>{{ msg.texto }}</p>
+            <button
+              v-if="msg.archivo_nombre"
+              type="button"
+              @click="descargarAdjunto(msg)"
+              class="flex items-center gap-2 rounded-lg px-2 py-1.5 mb-1 w-full text-left transition"
+              :class="msg.remisor === auth.usuario?.id ? 'bg-white/15 hover:bg-white/25' : 'bg-slate-100 hover:bg-slate-200'"
+            >
+              <AppIcon name="document" class="size-5 shrink-0" />
+              <span class="truncate flex-1 min-w-0 underline">{{ msg.archivo_nombre }}</span>
+              <AppIcon name="download" class="size-4 shrink-0" />
+            </button>
+            <p v-if="msg.texto" class="whitespace-pre-wrap break-words">{{ msg.texto }}</p>
             <span class="text-[10px] opacity-75 block text-right mt-1">
               {{ new Date(msg.fecha_envio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
             </span>
           </div>
         </div>
 
-        <form @submit.prevent="enviarMensaje" class="p-3 bg-white border-t border-slate-200 flex gap-2">
-          <input 
-            type="text" 
-            v-model="nuevoTexto" 
-            placeholder="Escribe un mensaje..." 
-            class="flex-1 border border-slate-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand"
-          />
-          <button type="submit" class="bg-brand text-white px-4 py-2 rounded-xl font-semibold flex items-center justify-center hover:bg-brand-dark transition">
-            <AppIcon name="paper-airplane" class="size-5" />
-          </button>
-        </form>
+        <div class="bg-white border-t border-slate-200">
+          <p v-if="errorEnvio" class="px-4 pt-2 text-xs text-red-600">{{ errorEnvio }}</p>
+
+          <!-- Archivo elegido, pendiente de enviar -->
+          <div v-if="archivoSeleccionado" class="mx-3 mt-3 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
+            <AppIcon name="document" class="size-5 shrink-0" />
+            <span class="truncate flex-1 min-w-0">{{ archivoSeleccionado.name }}</span>
+            <span class="text-xs text-slate-500 shrink-0">{{ tamanioLegible(archivoSeleccionado.size) }}</span>
+            <button type="button" @click="limpiarArchivo" class="text-slate-400 hover:text-slate-600 shrink-0" aria-label="Quitar archivo">
+              <AppIcon name="x-mark" class="size-4" />
+            </button>
+          </div>
+
+          <form @submit.prevent="enviarMensaje" class="p-3 flex gap-2">
+            <input
+              ref="inputArchivo"
+              type="file"
+              class="hidden"
+              :accept="EXTENSIONES_PERMITIDAS.join(',')"
+              @change="elegirArchivo"
+            />
+            <button
+              type="button"
+              @click="inputArchivo.click()"
+              class="border border-slate-300 text-slate-500 px-3 py-2 rounded-xl hover:bg-slate-50 transition flex items-center justify-center"
+              aria-label="Adjuntar archivo"
+            >
+              <AppIcon name="paper-clip" class="size-5" />
+            </button>
+            <input 
+              type="text" 
+              v-model="nuevoTexto" 
+              placeholder="Escribe un mensaje..." 
+              class="flex-1 min-w-0 border border-slate-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand"
+            />
+            <button
+              type="submit"
+              :disabled="enviando"
+              class="bg-brand text-white px-4 py-2 rounded-xl font-semibold flex items-center justify-center hover:bg-brand-dark transition disabled:opacity-60"
+            >
+              <AppIcon name="paper-airplane" class="size-5" />
+            </button>
+          </form>
+        </div>
       </template>
 
       <div v-else class="flex-1 hidden md:flex flex-col items-center justify-center text-slate-400 p-6">

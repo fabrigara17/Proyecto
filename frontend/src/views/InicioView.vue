@@ -2,36 +2,29 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlumnosStore } from '@/stores/alumnos'
-import { getComunicacionesRecientes } from '@/services/comunicaciones'
 import { getCantidadNoLeidas } from '@/services/notificaciones'
 import { nombreCompleto } from '@/utils/formato'
 import AppIcon from '@/components/AppIcon.vue'
 import ChipsAlumnos from '@/components/ChipsAlumnos.vue'
-import ComunicadoCard from '@/components/ComunicadoCard.vue'
+import CalendarioMensual from '@/components/CalendarioMensual.vue'
 
 const auth = useAuthStore()
 const alumnos = useAlumnosStore()
 
-const recientes = ref([])
 const sinLeer = ref(0)
-const cargando = ref(true)
 const error = ref('')
 
 const nombre = computed(() => auth.usuario?.first_name || auth.usuario?.username)
 
 onMounted(async () => {
   try {
-    const [coms, cantidad] = await Promise.all([
-      getComunicacionesRecientes(3),
+    const [cantidad] = await Promise.all([
       getCantidadNoLeidas(),
       alumnos.cargar(auth.rol),
     ])
-    recientes.value = coms
     sinLeer.value = cantidad
   } catch {
     error.value = 'No pudimos cargar la información. Probá de nuevo en un momento.'
-  } finally {
-    cargando.value = false
   }
 })
 </script>
@@ -62,6 +55,8 @@ onMounted(async () => {
 
     <ChipsAlumnos class="mt-3" />
 
+    <p v-if="error" class="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">{{ error }}</p>
+
     <router-link
       to="/notificaciones"
       class="mt-5 flex items-center gap-4 rounded-2xl bg-linear-to-br from-brand to-brand-dark p-4 text-white shadow-lg shadow-brand/25 md:p-6"
@@ -79,17 +74,8 @@ onMounted(async () => {
     </router-link>
 
     <section class="mt-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-lg font-extrabold text-slate-900">Recientes</h2>
-        <router-link to="/comunicados" class="text-sm font-bold text-brand">Ver todos</router-link>
-      </div>
-
-      <p v-if="cargando" class="mt-4 text-slate-500">Cargando...</p>
-      <p v-else-if="error" class="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">{{ error }}</p>
-      <p v-else-if="!recientes.length" class="mt-4 text-slate-500">Todavía no hay comunicados.</p>
-      <div v-else class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <ComunicadoCard v-for="c in recientes" :key="c.id" :comunicado="c" />
-      </div>
+      <h2 class="mb-3 text-lg font-extrabold text-slate-900">Calendario</h2>
+      <CalendarioMensual />
     </section>
   </div>
 </template>

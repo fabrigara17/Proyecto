@@ -72,7 +72,7 @@ const router = createRouter({
     { 
       path: '/calendario', 
       name: 'calendario', 
-      component: () => import('../views/CalendarioView.vue') 
+      redirect: '/',
     },
     {
       path: '/chat',

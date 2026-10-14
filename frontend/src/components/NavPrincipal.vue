@@ -8,7 +8,6 @@ const auth = useAuthStore()
 const route = useRoute()
 
 const INICIO = { to: '/', texto: 'Inicio', icono: 'home', exacto: true }
-const CALENDARIO = { to: '/calendario', texto: 'Calendario', icono: 'calendar' }
 const COMUNICADOS = { to: '/comunicados', texto: 'Comunicados', icono: 'bell' }
 const DESEMPENO = { to: '/historial', texto: 'Desempeño Académico', icono: 'clock' }
 const AVISOS = { to: '/notificaciones', texto: 'Avisos', icono: 'chat' }
@@ -22,11 +21,10 @@ const EQUIPO = { to: '/equipo', texto: 'Equipo', icono: 'users' }
 const USUARIOS = { to: '/usuarios', texto: 'Usuarios', icono: 'user-plus' }
 const CHAT = { to: '/chat', texto: 'Chat', icono: 'chat' }
 
-// Estructura original de los arreglos de roles con Chat incorporado
-const ITEMS_BASE = [INICIO, CALENDARIO, COMUNICADOS, DESEMPENO, CHAT, AVISOS, PERFIL, MATERIALES]
-const ITEMS_PRECEPTOR = [INICIO, CALENDARIO, COMUNICADOS, ASISTENCIAS, ALUMNOS, CHAT, AVISOS, PERFIL, MATERIALES]
-const ITEMS_CONDUCCION = [INICIO, CALENDARIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, PERFIL]
-const ITEMS_ADMIN = [INICIO, CALENDARIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, USUARIOS, PERFIL]
+const ITEMS_BASE = [INICIO, COMUNICADOS, DESEMPENO, CHAT, AVISOS, PERFIL, MATERIALES]
+const ITEMS_PRECEPTOR = [INICIO, COMUNICADOS, ASISTENCIAS, ALUMNOS, CHAT, AVISOS, PERFIL, MATERIALES]
+const ITEMS_CONDUCCION = [INICIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, PERFIL]
+const ITEMS_ADMIN = [INICIO, CURSOS, MATERIAS, EQUIPO, COMUNICADOS, CHAT, USUARIOS, PERFIL]
 
 const items = computed(() => {
   if (auth.rol === 'ADMIN') return ITEMS_ADMIN

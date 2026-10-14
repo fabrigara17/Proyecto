@@ -126,7 +126,7 @@ async function eliminar(e) {
 </script>
 
 <template>
-  <div class="pagina">
+  <div>
     <!-- Mes y navegación -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">
@@ -155,9 +155,9 @@ async function eliminar(e) {
       </button>
     </div>
 
-    <h1 class="mt-4 text-3xl font-extrabold uppercase leading-none tracking-tight text-slate-900 md:text-5xl">
+    <h2 class="mt-4 text-3xl font-extrabold uppercase leading-none tracking-tight text-slate-900 md:text-5xl">
       {{ nombreMes(anio, mes0) }}
-    </h1>
+    </h2>
 
     <!-- Leyenda de colores -->
     <div class="mt-3 flex flex-wrap gap-2">
