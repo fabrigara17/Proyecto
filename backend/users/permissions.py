@@ -40,6 +40,17 @@ class EsConduccion(TieneRol):
     """Equipo de conducción (y el rol de desarrollo, que conserva todos los permisos)."""
     roles_permitidos = (Rol.ADMIN, Rol.CONDUCCION)
 
+class SoloConduccion(EstaAutenticado):
+    """Únicamente el Equipo de Conducción (excluye ADMIN y superusuarios). Se usa para publicar comunicados."""
+
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        if request.user.rol == Rol.CONDUCCION:
+            return True
+        self.message = 'Solo el Equipo de Conducción puede realizar esta acción.'
+        return False
+
 class EsDocente(TieneRol):
     roles_permitidos = (Rol.DOCENTE,)
 

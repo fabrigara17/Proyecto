@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from users.models import ROLES_DIRECCION, Usuario, es_direccion
-from users.permissions import EsConduccion, EstaAutenticado
+from users.models import ROLES_DIRECCION, Rol, Usuario, es_direccion
+from users.permissions import EstaAutenticado, SoloConduccion
 from .models import Comunicacion, ComunicacionVista
 from .serializers import ComunicacionAdminSerializer, ComunicacionSerializer
 
@@ -13,6 +13,11 @@ from .serializers import ComunicacionAdminSerializer, ComunicacionSerializer
 def _destinatarios():
     """A quiénes les llegan los comunicados: usuarios activos que no son de la dirección."""
     return Usuario.objects.filter(is_active=True).exclude(rol__in=ROLES_DIRECCION).exclude(is_superuser=True)
+
+
+def _es_conduccion(user):
+    """Solo el Equipo de Conducción publica comunicados y ve quién los leyó."""
+    return getattr(user, 'rol', None) == Rol.CONDUCCION
 
 
 def _nombre(u):
@@ -23,23 +28,23 @@ class ComunicacionViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'vistas'):
-            return [EsConduccion()]
+            return [SoloConduccion()]
         return [EstaAutenticado()]
 
     def get_serializer_class(self):
-        return ComunicacionAdminSerializer if es_direccion(self.request.user) else ComunicacionSerializer
+        return ComunicacionAdminSerializer if _es_conduccion(self.request.user) else ComunicacionSerializer
 
     def get_serializer_context(self):
         contexto = super().get_serializer_context()
-        if es_direccion(self.request.user):
+        if _es_conduccion(self.request.user):
             contexto['total_destinatarios'] = _destinatarios().count()
         return contexto
 
     def get_queryset(self):
         user = self.request.user
         qs = Comunicacion.objects.select_related('autor')
-        if es_direccion(user):
-            # La dirección solo ve los comunicados que publicó la dirección
+        if _es_conduccion(user):
+            # Conducción solo ve los comunicados que publicó la dirección
             qs = qs.filter(Q(autor__rol__in=ROLES_DIRECCION) | Q(autor__is_superuser=True))
             qs = qs.annotate(cant_vistas=Count('vistas', distinct=True))
         else:

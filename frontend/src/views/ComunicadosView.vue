@@ -9,13 +9,13 @@ import { fechaHora, TIPOS_COMUNICADO } from '@/utils/formato'
 import ComunicadoCard from '@/components/ComunicadoCard.vue'
 
 const auth = useAuthStore()
-const esAdmin = computed(() => auth.rol === 'ADMIN')
+const esConduccion = computed(() => auth.rol === 'CONDUCCION')
 
 const comunicaciones = ref([])
 const cargando = ref(true)
 const error = ref('')
 
-// Solo administrador
+// Solo conducción
 const mostrarForm = ref(false)
 const form = ref({ titulo: '', tipo: 'AVISO', contenido: '' })
 const publicando = ref(false)
@@ -39,7 +39,7 @@ async function cargar() {
 onMounted(async () => {
   await cargar()
   // Quien abre esta pantalla ve los comunicados completos: se registran como vistos
-  if (!esAdmin.value) {
+  if (!esConduccion.value) {
     const pendientes = comunicaciones.value.filter((c) => c.visto === false).map((c) => c.id)
     if (pendientes.length) {
       try {
@@ -106,7 +106,7 @@ async function alternarVistas(c) {
     <div class="flex items-start justify-between gap-3">
       <h1 class="titulo-pagina">Comunicados</h1>
       <button
-        v-if="esAdmin && !mostrarForm"
+        v-if="esConduccion && !mostrarForm"
         type="button"
         @click="mostrarForm = true"
         class="boton-principal !w-auto shrink-0 px-4"
@@ -115,9 +115,9 @@ async function alternarVistas(c) {
       </button>
     </div>
 
-    <!-- Publicar (administrador) -->
+    <!-- Publicar (equipo de conducción) -->
     <form
-      v-if="esAdmin && mostrarForm"
+      v-if="esConduccion && mostrarForm"
       @submit.prevent="publicar"
       class="mt-4 grid gap-3 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm md:max-w-xl"
     >
@@ -163,7 +163,7 @@ async function alternarVistas(c) {
       <div v-for="c in comunicaciones" :key="c.id" class="grid gap-2">
         <ComunicadoCard :comunicado="c" completo />
 
-        <template v-if="esAdmin">
+        <template v-if="esConduccion">
           <div class="flex items-center justify-between gap-3 px-1 text-sm font-bold">
             <button type="button" @click="alternarVistas(c)" class="text-brand">
               Visto por {{ c.cant_vistas ?? 0 }} de {{ c.total_destinatarios ?? 0 }}
