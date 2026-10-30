@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from academico.models import AsignacionDocente, AsignacionPreceptor, Inscripcion
 from users.models import Rol, Usuario, es_direccion
-from .models import Asistencia, DiaSinClases, Estado, HorarioClase
+from .models import Asistencia, DiaSinClases, Estado, HorarioClase, NotaClase
 
 
 def validar_acceso_al_curso(user, curso):
@@ -105,6 +105,8 @@ class TomarAsistenciaSerializer(serializers.Serializer):
     )
     fecha = serializers.DateField()
     registros = RegistroAsistenciaSerializer(many=True, allow_empty=False)
+    # Nota del que toma la asistencia. Si no viene, no se toca; si viene vacía, se borra la suya.
+    nota = serializers.CharField(required=False, allow_blank=True, max_length=500)
 
     def validate_fecha(self, value):
         validar_dia_abierto(value)
@@ -132,7 +134,28 @@ class TomarAsistenciaSerializer(serializers.Serializer):
             raise serializers.ValidationError('Hay alumnos que no están inscriptos en ese curso.')
         return attrs
 
+class NotaClaseSerializer(serializers.ModelSerializer):
+    """Solo lectura: las notas se guardan junto con la asistencia ("tomar")."""
+    autor_nombre = serializers.SerializerMethodField()
+    autor_rol = serializers.SerializerMethodField()
+    es_mia = serializers.SerializerMethodField()
 
+    class Meta:
+        model = NotaClase
+        fields = ['id', 'clase', 'fecha', 'texto', 'autor', 'autor_nombre', 'autor_rol', 'es_mia', 'actualizada']
+        read_only_fields = fields
+
+    def get_autor_nombre(self, obj):
+        if not obj.autor_id:
+            return 'Usuario eliminado'
+        return obj.autor.get_full_name() or obj.autor.username
+
+    def get_autor_rol(self, obj):
+        return obj.autor.rol if obj.autor_id else None
+
+    def get_es_mia(self, obj):
+        return obj.autor_id == self.context['request'].user.id
+    
 class HorarioClaseSerializer(serializers.ModelSerializer):
     hora_inicio = serializers.TimeField(format='%H:%M')
     hora_fin = serializers.TimeField(format='%H:%M')

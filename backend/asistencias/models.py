@@ -86,6 +86,29 @@ class Asistencia(models.Model):
     def __str__(self):
         return f"{self.alumno} - {self.curso} - {self.fecha}"
 
+class NotaClase(models.Model):
+    """Nota del docente o del preceptor sobre una clase en un día (ej. "llovía mucho").
+    Cada autor tiene una sola nota por clase y día. Solo la ve el personal."""
+    clase = models.ForeignKey(HorarioClase, on_delete=models.CASCADE, related_name='notas')
+    fecha = models.DateField()
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='notas_de_clase',
+    )
+    texto = models.CharField(max_length=500)
+    creada = models.DateTimeField(auto_now_add=True)
+    actualizada = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['creada', 'id']
+        verbose_name_plural = 'notas de clase'
+        constraints = [
+            models.UniqueConstraint(fields=['clase', 'fecha', 'autor'], name='uniq_nota_clase_fecha_autor'),
+        ]
+
+    def __str__(self):
+        return f"{self.clase} - {self.fecha}: {self.texto[:30]}"
+
+
 class DiaSinClases(models.Model):
     """Día sin clases (feriado, ausencia docente, etc.). Sin curso = vale para todo el colegio."""
     fecha = models.DateField()

@@ -5,7 +5,6 @@ import { useAlumnosStore } from '@/stores/alumnos'
 import { getCantidadNoLeidas } from '@/services/notificaciones'
 import { nombreCompleto } from '@/utils/formato'
 import AppIcon from '@/components/AppIcon.vue'
-import ChipsAlumnos from '@/components/ChipsAlumnos.vue'
 import CalendarioMensual from '@/components/CalendarioMensual.vue'
 
 const auth = useAuthStore()
@@ -34,10 +33,6 @@ onMounted(async () => {
     <header class="flex items-start justify-between gap-3">
       <div>
         <h1 class="titulo-pagina">Hola, {{ nombre }} 👋</h1>
-        <p v-if="alumnos.seleccionado" class="text-sm text-slate-500">
-          Alumno:
-          <span class="font-semibold text-brand">{{ nombreCompleto(alumnos.seleccionado) }}</span>
-        </p>
       </div>
 
       <router-link
@@ -52,8 +47,6 @@ onMounted(async () => {
         ></span>
       </router-link>
     </header>
-
-    <ChipsAlumnos class="mt-3" />
 
     <p v-if="error" class="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">{{ error }}</p>
 

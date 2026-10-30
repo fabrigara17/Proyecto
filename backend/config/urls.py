@@ -6,7 +6,7 @@ from academico.views import (
     CursoViewSet, MateriaViewSet, MateriaCursoViewSet, InscripcionViewSet,
     AsignacionDocenteViewSet, VinculoFamiliarViewSet, AsignacionPreceptorViewSet
 )
-from asistencias.views import AsistenciaViewSet, DiaSinClasesViewSet, HorarioClaseViewSet
+from asistencias.views import AsistenciaViewSet, DiaSinClasesViewSet, HorarioClaseViewSet, NotaClaseViewSet
 from calificaciones.views import CalificacionesViewSet, EtapaViewSet
 from comunicaciones.views import ComunicacionViewSet
 from materiales.views import MaterialViewSet
@@ -35,6 +35,7 @@ router.register('conversaciones', ConversacionViewSet, basename='conversacion')
 router.register('mensajes', MensajeViewSet, basename='mensaje')
 router.register('horarios', HorarioClaseViewSet, basename='horario')
 router.register('etapas', EtapaViewSet, basename='etapa')
+router.register('notas-clase', NotaClaseViewSet, basename='nota-clase')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

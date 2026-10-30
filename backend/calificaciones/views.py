@@ -73,10 +73,30 @@ class CalificacionesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         cal = serializer.save(docente=self.request.user)
-        Notificacion.objects.create(
-            usuario=cal.alumno,
-            mensaje=f"Nueva nota en {cal.materia}: {cal.nota}",
+        alumno = cal.alumno
+        nota = f"{cal.nota:g}"  # 8.50 -> 8.5, 10.00 -> 10
+
+        tutores_ids = list(
+            VinculoFamiliar.objects.filter(alumno=alumno).values_list('tutor_id', flat=True)
         )
+
+        # El alumno ve el aviso en primera persona; la familia ve el nombre del hijo,
+        # porque puede tener varios hijos asociados.
+        nombre_alumno = alumno.get_full_name() or alumno.username
+        avisos = [
+            Notificacion(
+                usuario=alumno,
+                mensaje=f"Nueva nota en {cal.materia}: {nota}"[:255],
+            )
+        ]
+        avisos += [
+            Notificacion(
+                usuario_id=tutor_id,
+                mensaje=f"Nueva nota de {nombre_alumno} en {cal.materia}: {nota}"[:255],
+            )
+            for tutor_id in tutores_ids
+        ]
+        Notificacion.objects.bulk_create(avisos)
 
     def perform_destroy(self, instance):
         etapa = instance.etapa

@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from academico.models import VinculoFamiliar
 from users.models import ROLES_DIRECCION, Rol, es_direccion
 from users.permissions import EsAdminOPreceptor, EsDocenteOPreceptor, EstaAutenticado
-from .models import Asistencia, DiaSinClases, Estado, HorarioClase
+from .models import Asistencia, DiaSinClases, Estado, HorarioClase, NotaClase
 from .serializers import (
-    AsistenciaSerializer, DiaSinClasesSerializer, HorarioClaseSerializer, TomarAsistenciaSerializer,
+    AsistenciaSerializer, DiaSinClasesSerializer, HorarioClaseSerializer,
+    NotaClaseSerializer, TomarAsistenciaSerializer,
 )
 
 
@@ -80,7 +81,8 @@ class AsistenciaViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
         serializer.is_valid(raise_exception=True)
         clase = serializer.validated_data['clase']
         fecha = serializer.validated_data['fecha']
-
+                    # Nota de la clase: una por autor, por clase y por día
+        
         with transaction.atomic():
             for r in serializer.validated_data['registros']:
                 Asistencia.objects.update_or_create(
@@ -93,11 +95,52 @@ class AsistenciaViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewse
                         'registrado_por': request.user,
                     },
                 )
+            nota = serializer.validated_data.get('nota')
+            if nota is not None:
+                nota = nota.strip()
+                if nota:
+                    NotaClase.objects.update_or_create(
+                        clase=clase, fecha=fecha, autor=request.user, 
+                        defaults={'texto': nota},
+                    )
+                else:
+                    NotaClase.objects.filter(
+                        clase=clase, fecha=fecha, autor=request.user
+                        ).delete()
+                
 
         registros = self.get_queryset().filter(clase=clase, fecha=fecha)
         return Response(AsistenciaSerializer(registros, many=True, context={'request': request}).data)
 
+class NotaClaseViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Notas de clase. Solo las ve el personal (docente de la materia, preceptor del curso).
+    Se guardan con la acción "tomar" de asistencias, no se crean desde acá."""
+    serializer_class = NotaClaseSerializer
+    permission_classes = [EsDocenteOPreceptor]
+    pagination_class = None
 
+    def get_queryset(self):
+        user = self.request.user
+        qs = NotaClase.objects.select_related('autor')
+
+        if user.is_superuser:
+            pass
+        elif user.rol == Rol.DOCENTE:
+            qs = qs.filter(clase__materia_curso__asignaciones__docente=user).distinct()
+        elif user.rol == Rol.PRECEPTOR:
+            qs = qs.filter(clase__curso__preceptores__preceptor=user)
+        else:
+            return qs.none()
+
+        p = self.request.query_params
+        if p.get('clase'):
+            qs = qs.filter(clase_id=_parse_id(p['clase'], 'clase'))
+        if p.get('fecha'):
+            qs = qs.filter(fecha=_parse_fecha(p['fecha']))
+        return qs
+
+
+    
 class HorarioClaseViewSet(viewsets.ModelViewSet):
     """Horario semanal de cada curso. Lo arma el preceptor del curso (o conducción)."""
     serializer_class = HorarioClaseSerializer

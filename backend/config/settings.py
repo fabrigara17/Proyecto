@@ -13,7 +13,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['192.168.0.125', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['10.163.73.171', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -67,7 +67,6 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://192.168.0.125:5173",
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -124,4 +123,4 @@ MAILERS = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-NOTA_APROBACION = 6  # promedio mínimo para aprobar una materia
+NOTA_APROBACION = 7  # promedio mínimo para aprobar una materia
