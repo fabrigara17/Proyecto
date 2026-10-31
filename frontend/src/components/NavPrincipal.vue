@@ -63,8 +63,8 @@ onBeforeUnmount(() => {
   <!-- Menú lateral (celular) -->
   <div class="md:hidden">
     <Transition
-      enter-active-class="transition-opacity duration-200"
-      leave-active-class="transition-opacity duration-200"
+      enter-active-class="transition-opacity duration-200 ease-out"
+      leave-active-class="transition-opacity duration-150 ease-in"
       enter-from-class="opacity-0"
       leave-to-class="opacity-0"
     >
@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
     </Transition>
 
     <Transition
-      enter-active-class="transition-transform duration-200 ease-out"
+      enter-active-class="transition-transform duration-250 ease-out"
       leave-active-class="transition-transform duration-200 ease-in"
       enter-from-class="-translate-x-full"
       leave-to-class="-translate-x-full"
@@ -89,32 +89,38 @@ onBeforeUnmount(() => {
         aria-label="Menú principal"
         class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col bg-white p-4 shadow-xl"
       >
-        <div class="mb-4 flex items-center justify-between gap-2 px-2 pt-1">
+        <div class="mb-4 flex items-center justify-between gap-2 border-b border-slate-200 px-2 pt-1 pb-4">
           <div class="flex min-w-0 items-center gap-2">
             <img :src="logo" alt="" class="size-8" />
-            <span class="truncate text-lg font-extrabold text-brand-dark">Libreta Digital</span>
+            <span class="truncate text-lg font-semibold tracking-tight text-brand-dark">Libreta Digital</span>
           </div>
           <button
             type="button"
             @click="menu.cerrar()"
             aria-label="Cerrar menú"
-            class="grid size-10 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-slate-100"
+            class="grid size-10 shrink-0 place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
           >
             <AppIcon name="x-mark" class="size-6" />
           </button>
         </div>
 
         <nav class="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-          <ul class="flex flex-col gap-1">
+          <ul class="flex flex-col gap-0.5">
             <li v-for="item in items" :key="item.to">
               <router-link :to="item.to" custom v-slot="{ href, navigate, isActive, isExactActive }">
                 <a
                   :href="href"
                   @click="navigate"
-                  class="flex items-center gap-3 rounded-xl px-3 py-3 font-semibold transition"
-                  :class="(item.exacto ? isExactActive : isActive) ? 'bg-blue-50 text-brand' : 'text-slate-600 hover:bg-slate-50'"
+                  class="group relative flex items-center gap-3 rounded-md px-3 py-3 font-medium transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:origin-center before:rounded-full before:bg-brand before:transition-transform before:duration-200"
+                  :class="(item.exacto ? isExactActive : isActive)
+                    ? 'bg-blue-100 text-brand-dark before:scale-y-100'
+                    : 'text-slate-600 before:scale-y-0 hover:bg-blue-50 hover:text-slate-900'"
                 >
-                  <AppIcon :name="item.icono" class="size-5 shrink-0" />
+                  <AppIcon
+                    :name="item.icono"
+                    class="size-5 shrink-0 transition-colors duration-150"
+                    :class="(item.exacto ? isExactActive : isActive) ? 'text-brand' : 'text-slate-400 group-hover:text-slate-600'"
+                  />
                   <span class="truncate">{{ item.texto }}</span>
                 </a>
               </router-link>
@@ -127,14 +133,14 @@ onBeforeUnmount(() => {
 
   <!-- Sidebar fijo (escritorio) -->
   <aside class="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-slate-200 bg-white p-4 md:flex">
-    <div class="mb-6 flex items-center gap-3 px-2 pt-2">
-      <span class="grid size-10 place-items-center rounded-xl bg-brand text-white">
-        <AppIcon name="chat" class="size-6" />
+    <div class="mb-5 flex items-center gap-3 border-b border-slate-200 px-2 pt-2 pb-5">
+      <span class="grid size-9 place-items-center rounded-md bg-brand text-white">
+        <AppIcon name="chat" class="size-5" />
       </span>
-      <span class="text-xl font-extrabold text-brand-dark">Libreta Digital</span>
+      <span class="text-lg font-semibold tracking-tight text-brand-dark">Libreta Digital</span>
     </div>
 
-    <nav class="flex flex-col gap-1">
+    <nav class="flex flex-col gap-0.5">
       <router-link
         v-for="item in items"
         :key="item.to"
@@ -145,10 +151,16 @@ onBeforeUnmount(() => {
         <a
           :href="href"
           @click="navigate"
-          class="flex items-center gap-3 rounded-xl px-3 py-2.5 font-semibold transition"
-          :class="(item.exacto ? isExactActive : isActive) ? 'bg-blue-50 text-brand' : 'text-slate-500 hover:bg-slate-50'"
+          class="group relative flex items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium transition-colors duration-150 before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:origin-center before:rounded-full before:bg-brand before:transition-transform before:duration-200"
+          :class="(item.exacto ? isExactActive : isActive)
+            ? 'bg-blue-100 text-brand-dark before:scale-y-100'
+            : 'text-slate-600 before:scale-y-0 hover:bg-blue-50 hover:text-slate-900'"
         >
-          <AppIcon :name="item.icono" class="size-5" />
+          <AppIcon
+            :name="item.icono"
+            class="size-5 shrink-0 transition-colors duration-150"
+            :class="(item.exacto ? isExactActive : isActive) ? 'text-brand' : 'text-slate-400 group-hover:text-slate-600'"
+          />
           {{ item.texto }}
         </a>
       </router-link>

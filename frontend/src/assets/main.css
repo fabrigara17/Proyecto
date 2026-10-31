@@ -1,15 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
-  --color-brand: #1565c0;
-  --color-brand-dark: #0d47a1;
-  --color-fondo: #f3f7fd;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #1b3a5c;
+  --color-brand-dark: #12273f;
+  --color-fondo: #f5f6f8;
+
+  /* blue-50/100/200 se usan como fondos y bordes suaves en toda la app:
+     los paso a grises azulados neutros */
+  --color-blue-50: #f1f4f8;
+  --color-blue-100: #e3e8ef;
+  --color-blue-200: #cfd7e2;
+
+  /* Esquinas más contenidas */
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.5rem;
+
+  /* Sombras de una sola capa y sin color */
+  --shadow-sm: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+  --shadow-lg: 0 8px 24px -8px rgb(16 24 40 / 0.18);
+  --shadow-xl: 0 12px 32px -8px rgb(16 24 40 / 0.22);
+
+  /* Títulos y etiquetas menos pesados */
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
 }
 
 @layer base {
   body {
     @apply bg-fondo text-slate-800 antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
   }
 }
 
@@ -18,12 +45,32 @@
     @apply mx-auto w-full max-w-5xl px-4 pt-6 pb-8 md:px-8 md:pt-10;
   }
   .titulo-pagina {
-    @apply text-2xl font-extrabold text-slate-900 md:text-3xl;
+    @apply text-2xl font-semibold tracking-tight text-slate-900 md:text-[1.75rem];
   }
   .campo {
-    @apply mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+    @apply mt-1 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 outline-none transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/15;
   }
   .boton-principal {
-    @apply w-full rounded-2xl bg-linear-to-r from-brand to-brand-dark py-4 font-bold text-white shadow-lg shadow-brand/30 transition active:scale-[.99] disabled:opacity-60;
+    @apply w-full rounded-md bg-brand px-4 py-3 font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
+/* Transición entre páginas (App.vue) */
+.pagina-enter-active,
+.pagina-leave-active {
+  transition: opacity 120ms ease;
+}
+.pagina-enter-from,
+.pagina-leave-to {
+  opacity: 0;
+}
+
+/* Respeta a quien tiene activada la reducción de movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

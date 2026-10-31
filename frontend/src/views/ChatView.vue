@@ -52,7 +52,7 @@ function nombreOtro(conv) {
 function previewUltimo(conv) {
   const m = conv.ultimo_mensaje
   if (!m) return 'Sin mensajes aún'
-  return m.texto || `📎 ${m.archivo_nombre}`
+  return m.texto || `Adjunto: ${m.archivo_nombre}`
 }
 
 async function seleccionarChat(conv) {
@@ -324,8 +324,14 @@ onMounted(() => {
     <div v-if="modalAbierto" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-xl overflow-hidden">
         <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-          <h3 class="font-bold text-slate-800 text-lg">Iniciar Nueva Conversación</h3>
-          <button @click="modalAbierto = false" class="text-slate-400 hover:text-slate-600">✕</button>
+            <h3 class="font-semibold text-slate-800 text-lg">Nueva conversación</h3>
+            <button
+            @click="modalAbierto = false"
+            aria-label="Cerrar"
+            class="grid size-8 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            >
+            <AppIcon name="x-mark" class="size-5" />
+          </button>
         </div>
 
         <div class="p-4 border-b border-slate-100 space-y-3">

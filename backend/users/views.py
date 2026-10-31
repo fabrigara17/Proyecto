@@ -12,7 +12,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from .models import Rol, Usuario, roles_gestionables
 from .permissions import PuedeGestionarUsuarios
 from .serializers import (
-    UsuarioSerializer, CambiarPasswordSerializer, UsuarioAdminSerializer,
+    CambiarPasswordSerializer, PerfilSerializer, UsuarioAdminSerializer,
 )
 
 
@@ -30,7 +30,7 @@ class LoginView(ObtainAuthToken):
         user.save(update_fields=['last_login'])
         return Response({
             'token': token.key,
-            'usuario': UsuarioSerializer(user).data,  # incluye debe_cambiar_password
+            'usuario': PerfilSerializer(user).data,  # incluye debe_cambiar_password y curso
         })
 
 
@@ -44,7 +44,7 @@ def logout(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def perfil(request):
-    return Response(UsuarioSerializer(request.user).data)
+    return Response(PerfilSerializer(request.user).data)
 
 
 @api_view(['POST'])

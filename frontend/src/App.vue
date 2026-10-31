@@ -28,15 +28,19 @@ const conNav = computed(
           aria-label="Abrir menú"
           aria-controls="menu-lateral"
           :aria-expanded="menu.abierto.value"
-          class="grid size-10 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-100 active:bg-slate-200"
+          class="grid size-10 place-items-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200"
         >
           <AppIcon name="bars-3" class="size-6" />
         </button>
         <img :src="logo" alt="" class="size-8" />
-        <span class="text-lg font-extrabold text-brand-dark">Libreta Digital</span>
+        <span class="text-lg font-semibold tracking-tight text-brand-dark">Libreta Digital</span>
       </header>
 
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <Transition name="pagina" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
     </main>
   </div>
 </template>

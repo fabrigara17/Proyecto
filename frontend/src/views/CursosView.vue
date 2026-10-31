@@ -234,14 +234,14 @@ async function crear() {
       <li v-for="c in filtrados" :key="c.id">
         <router-link
           :to="{ name: 'curso-detalle', params: { id: c.id } }"
-          class="flex items-center gap-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm transition hover:border-brand"
+          class="group flex items-center gap-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50"
         >
           <span class="min-w-0 flex-1">
             <span class="flex items-center gap-2">
-              <span class="truncate font-bold text-slate-900">{{ c.nombre }}</span>
+              <span class="truncate font-semibold text-slate-900">{{ c.nombre }}</span>
               <span
                 v-if="c.turno"
-                class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
                 :class="COLOR_TURNO[c.turno]"
               >
                 {{ nombreTurno(c.turno) }}
@@ -250,12 +250,15 @@ async function crear() {
             <span class="block text-xs text-slate-500">
               {{ anioCursada(c.anio_cursada) }} · Año lectivo {{ c.anio_lectivo }}
             </span>
-            <span class="mt-1 block text-xs font-semibold text-slate-600">
+            <span class="mt-1 block text-xs font-medium text-slate-600">
               {{ c.cant_alumnos }} {{ c.cant_alumnos === 1 ? 'alumno' : 'alumnos' }}
               · {{ c.cant_materias }} {{ c.cant_materias === 1 ? 'materia' : 'materias' }}
             </span>
           </span>
-          <AppIcon name="arrow-right" class="size-5 shrink-0 text-slate-400" />
+          <AppIcon
+            name="arrow-right"
+            class="size-5 shrink-0 text-slate-300 transition duration-150 group-hover:translate-x-0.5 group-hover:text-brand"
+          />
         </router-link>
       </li>
     </ul>

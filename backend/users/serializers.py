@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import Usuario, roles_gestionables
+from .models import Rol, Usuario, roles_gestionables
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -12,6 +12,27 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'rol', 'rol_display', 'debe_cambiar_password']
         read_only_fields = ['id', 'debe_cambiar_password']
+
+
+class PerfilSerializer(UsuarioSerializer):
+    """Datos del usuario logueado (login y /perfil). Suma el curso si es alumno."""
+    curso = serializers.SerializerMethodField()
+
+    class Meta(UsuarioSerializer.Meta):
+        fields = UsuarioSerializer.Meta.fields + ['curso']
+
+    def get_curso(self, obj):
+        if obj.rol != Rol.ALUMNO:
+            return None
+        # Import local para evitar dependencia circular entre apps
+        from academico.models import Inscripcion
+        inscripcion = (
+            Inscripcion.objects.filter(alumno=obj)
+            .select_related('curso')
+            .order_by('-curso__anio_lectivo')
+            .first()
+        )
+        return inscripcion.curso.nombre if inscripcion else None
 
 
 class CambiarPasswordSerializer(serializers.Serializer):

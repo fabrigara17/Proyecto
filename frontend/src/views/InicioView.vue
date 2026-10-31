@@ -13,7 +13,9 @@ const alumnos = useAlumnosStore()
 const sinLeer = ref(0)
 const error = ref('')
 
-const nombre = computed(() => auth.usuario?.first_name || auth.usuario?.username)
+const nombre = computed(() => nombreCompleto(auth.usuario))
+const rol = computed(() => auth.usuario?.rol_display ?? '')
+const curso = computed(() => auth.usuario?.curso ?? null)
 
 onMounted(async () => {
   try {
@@ -31,19 +33,28 @@ onMounted(async () => {
 <template>
   <div class="pagina">
     <header class="flex items-start justify-between gap-3">
-      <div>
-        <h1 class="titulo-pagina">Hola, {{ nombre }} 👋</h1>
+      <div class="min-w-0">
+        <h1 class="titulo-pagina">{{ nombre }}</h1>
+        <p class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+          <span>{{ rol }}</span>
+          <span
+            v-if="curso"
+            class="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600"
+          >
+            Curso {{ curso }}
+          </span>
+        </p>
       </div>
 
       <router-link
         to="/notificaciones"
         aria-label="Avisos"
-        class="relative grid size-11 shrink-0 place-items-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-100 hover:text-brand"
+        class="relative grid size-10 shrink-0 place-items-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-brand"
       >
-        <AppIcon name="bell" class="size-6" />
+        <AppIcon name="bell" class="size-5" />
         <span
           v-if="sinLeer > 0"
-          class="absolute top-2.5 right-2.5 size-2.5 rounded-full bg-red-500 ring-2 ring-white"
+          class="absolute top-2 right-2 size-2 rounded-full bg-red-500 ring-2 ring-white"
         ></span>
       </router-link>
     </header>
@@ -52,22 +63,21 @@ onMounted(async () => {
 
     <router-link
       to="/notificaciones"
-      class="mt-5 flex items-center gap-4 rounded-2xl bg-linear-to-br from-brand to-brand-dark p-4 text-white shadow-lg shadow-brand/25 md:p-6"
+      class="group mt-5 flex items-center gap-4 rounded-lg border border-slate-200 border-l-4 border-l-brand bg-white p-4 transition-colors hover:bg-slate-50 md:p-5"
     >
-      <span class="grid size-12 place-items-center rounded-xl bg-white/20 text-2xl font-extrabold">
-        {{ sinLeer }}
-      </span>
+      <span class="min-w-8 text-3xl font-semibold tabular-nums text-brand-dark">{{ sinLeer }}</span>
       <span class="flex-1">
-        <span class="block font-bold md:text-lg">Avisos sin leer</span>
-        <span class="block text-sm text-white/80">Tocá para ver los nuevos avisos</span>
+        <span class="block font-semibold text-slate-900">Avisos sin leer</span>
+        <span class="block text-sm text-slate-500">Ver avisos nuevos</span>
       </span>
-      <span class="grid size-9 place-items-center rounded-lg bg-white/20">
-        <AppIcon name="arrow-right" class="size-5" />
-      </span>
+      <AppIcon
+        name="arrow-right"
+        class="size-5 shrink-0 text-slate-400 transition duration-150 group-hover:translate-x-0.5 group-hover:text-brand"
+      />
     </router-link>
 
     <section class="mt-6">
-      <h2 class="mb-3 text-lg font-extrabold text-slate-900">Calendario</h2>
+      <h2 class="mb-3 text-lg font-semibold text-slate-900">Calendario</h2>
       <CalendarioMensual />
     </section>
   </div>
