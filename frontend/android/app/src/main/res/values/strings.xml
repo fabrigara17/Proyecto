@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Libreta Digital</string>
+    <string name="title_activity_main">Libreta Digital</string>
+    <string name="package_name">com.fabri.libretadigital</string>
+    <string name="custom_url_scheme">com.fabri.libretadigital</string>
+</resources>
