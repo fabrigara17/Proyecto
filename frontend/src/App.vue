@@ -15,12 +15,19 @@ const conNav = computed(
 </script>
 
 <template>
-  <div class="min-h-dvh md:flex">
+  <div
+    class="min-h-dvh md:flex"
+    :style="{
+      paddingTop: conNav ? '0px' : 'var(--safe-area-inset-top, env(safe-area-inset-top, 0px))',
+      paddingBottom: 'var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))',
+    }"
+  >
     <NavPrincipal v-if="conNav" />
     <main class="min-w-0 flex-1">
       <header
         v-if="conNav"
-        class="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-200 bg-white/90 px-2 py-2 backdrop-blur md:hidden"
+        class="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-200 bg-white/90 px-2 pb-2 backdrop-blur md:hidden"
+        style="padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 0.5rem)"
       >
         <button
           type="button"

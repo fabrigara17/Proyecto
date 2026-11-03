@@ -74,3 +74,18 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Safe areas (Android edge-to-edge / notch) */
+/* Safe areas (Android edge-to-edge) */
+.safe-top {
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+}
+.safe-top-header {
+  padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 0.5rem);
+}
+.safe-top-drawer {
+  padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 1rem);
+}
+.safe-bottom {
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}

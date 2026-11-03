@@ -87,7 +87,8 @@ onBeforeUnmount(() => {
         id="menu-lateral"
         role="dialog"
         aria-label="Menú principal"
-        class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col bg-white p-4 shadow-xl"
+        class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col bg-white px-4 pb-4 shadow-xl"
+        style="padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 1rem)"
       >
         <div class="mb-4 flex items-center justify-between gap-2 border-b border-slate-200 px-2 pt-1 pb-4">
           <div class="flex min-w-0 items-center gap-2">
@@ -104,7 +105,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <nav class="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+        <nav class="flex-1 overflow-y-auto safe-bottom">
           <ul class="flex flex-col gap-0.5">
             <li v-for="item in items" :key="item.to">
               <router-link :to="item.to" custom v-slot="{ href, navigate, isActive, isExactActive }">

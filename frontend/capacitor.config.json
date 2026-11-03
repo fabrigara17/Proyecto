@@ -1,5 +1,11 @@
 {
   "appId": "com.fabri.libretadigital",
   "appName": "Libreta Digital",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
 }
